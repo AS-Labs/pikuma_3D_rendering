@@ -30,6 +30,9 @@ SDL_Renderer* renderer = NULL;
 int window_width = 800;
 int window_height = 600;
 
+// initialize frame/color buffer to null pointer
+uint32_t* color_buffer = NULL;
+
 //int setenv("SDL_VIDEODRIVER", "x11", 1);
 
 bool initialize_window(void) {
@@ -62,7 +65,14 @@ bool initialize_window(void) {
 
 
 void setup(void) {
-   // TODO:
+    // allocated the memory for the frame/color buffer
+    // casing to uint32_t pointer
+    color_buffer = (uint32_t*) malloc(sizeof(uint32_t) * window_width * window_height);
+    if (!color_buffer) {
+        fprintf(stderr, "Error allocating color_buffer memory.\n");
+    }
+    // if the malloc function fails, it will return a NULL pointer which is what we are checking above.
+    // everytime we use malloc we need to free the allocated memory.
 
 }
 void process_input(void) {
@@ -90,6 +100,14 @@ void render(void) {
     SDL_RenderPresent(renderer);
 }
 
+// Basically free the memory
+// our own GC
+void destroy_window(void) {
+    free(color_buffer);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
 int main(void) {
     setenv("SDL_VIDEODRIVER", "x11", 1);
     printf("SDL_VIDEODRIVER=%s\n", getenv("SDL_VIDEODRIVER"));
@@ -102,6 +120,7 @@ int main(void) {
         update();
         render();
     }
+    destroy_window();
 
     return 0;
 }
