@@ -5,6 +5,7 @@
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_time.h>
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
@@ -43,6 +44,24 @@ bool initialize_window(void) {
         fprintf(stderr, "Error initializing SDL.\n");
         return false;
     }
+
+    // SDL query for display max width and height. SDL2 Old implementation
+    // SDL_DisplayMode display_mode;
+    // SDL_GetCurrentDisplayMode(0, &display_mode);
+    // window_width = display_mode.w;
+    // window_height = display_mode.h;
+
+    // SDL query for display max width and height. SDL3
+    SDL_DisplayID display_id = SDL_GetPrimaryDisplay();
+    SDL_DisplayMode* display_mode = SDL_GetCurrentDisplayMode(display_id);
+    SDL_GetCurrentDisplayMode(0);
+    window_width = display_mode->w;
+    window_height = display_mode->h;
+    fprintf(stdout, "display_mode.w = %d.\n", window_width);
+    fprintf(stdout, "display_mode.h = %d.\n", window_height);
+
+
+
     // Create a SDL Window
     window = SDL_CreateWindow(
         NULL,
@@ -61,7 +80,7 @@ bool initialize_window(void) {
         fprintf(stderr, "Error creating SDL renderer.\n");
         return false;
     }
-
+    // SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN); //ISSUE: Creating issue where quit is not working..
     return true;
 }
 
@@ -107,6 +126,16 @@ void update(void) {
 
 }
 
+// draw_grid exercise test..
+void draw_grid(void) {
+    for (int y = 0; y < window_height; y += 50) { // Draw horizontal lines at every 50 pixels
+        SDL_RenderLine(renderer, 0, y, window_width, y);
+    }
+    for (int x = 0; x < window_width; x += 50) { // Draw vertical lines at every 50 pixels
+        SDL_RenderLine(renderer, x, 0, x, window_height);
+    }
+}
+
 void render_color_buffer(void) {
     SDL_UpdateTexture(
             color_buffer_texture,
@@ -116,6 +145,7 @@ void render_color_buffer(void) {
         );
     //SDL_RenderCopy(renderer, color_buffer_texture, NULL, NULL);
     SDL_RenderTexture(renderer, color_buffer_texture, NULL, NULL);
+    draw_grid();
 }
 
 void clear_color_buffer(uint32_t color) {
@@ -129,7 +159,7 @@ void render(void) {
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderClear(renderer);
     render_color_buffer();
-    clear_color_buffer(0xFFFFFF00);
+    clear_color_buffer(0xFF000000);
     SDL_RenderPresent(renderer);
 
 }
