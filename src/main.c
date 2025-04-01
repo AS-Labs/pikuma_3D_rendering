@@ -145,7 +145,6 @@ void render_color_buffer(void) {
         );
     //SDL_RenderCopy(renderer, color_buffer_texture, NULL, NULL);
     SDL_RenderTexture(renderer, color_buffer_texture, NULL, NULL);
-    draw_grid();
 }
 
 void clear_color_buffer(uint32_t color) {
@@ -160,6 +159,7 @@ void render(void) {
     SDL_RenderClear(renderer);
     render_color_buffer();
     clear_color_buffer(0xFF000000);
+    draw_grid();
     SDL_RenderPresent(renderer);
 
 }
