@@ -17,17 +17,44 @@
 #include <SDL3/SDL_time.h>
 #include <SDL3/SDL_video.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+/*
+ Arena allocations here
+ * */
+
+// typedef struct Arena {
+//   size_t size;
+//   size_t capacity;
+//   size_t position;
+//   void *data;
+// } Arena;
+//
+// Arena *ArenaAlloc(size_t capacity) {
+//   Arena *arena = malloc(sizeof(Arena));
+//   arena->size = 0;
+//   arena->capacity = capacity;
+//   arena->position = 0;
+//   arena->data = malloc(sizeof(size_t) * capacity);
+//   return arena;
+// }
+//
+// void ArenaRelease(Arena *arena) {
+//   free(arena->data);
+//   free(arena);
+// }
 
 // Global Vars
 bool is_running = false;
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *color_buffer_texture = NULL;
-int window_width = 800;
-int window_height = 600;
+int window_width = 0;
+int window_height = 0;
+float window_refresh = 0.0f;
 
 // initialize frame/color buffer to null pointer
 uint32_t *color_buffer = NULL;
@@ -53,8 +80,10 @@ bool initialize_window(void) {
   SDL_GetCurrentDisplayMode(0);
   window_width = display_mode->w;
   window_height = display_mode->h;
+  window_refresh = display_mode->refresh_rate;
   fprintf(stdout, "display_mode.w = %d.\n", window_width);
   fprintf(stdout, "display_mode.h = %d.\n", window_height);
+  fprintf(stdout, "display_mode.refresh_rate = %0.f.\n", window_refresh);
 
   // Create a SDL Window
   window = SDL_CreateWindow(NULL, window_width, window_height,
@@ -70,8 +99,13 @@ bool initialize_window(void) {
     fprintf(stderr, "Error creating SDL renderer.\n");
     return false;
   }
-  // SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN); //ISSUE: Creating
-  // TODO: issue where quit is not working..
+  /*
+    ISSUE:
+    if the window is moved, then the quit escape key cannot be used for some
+    reason..even happens with the borderless window setup where the escape is
+    not registered until after multiple tries.
+    */
+  // SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
   return true;
 }
 
@@ -80,8 +114,12 @@ void setup(void) {
   // casing to uint32_t pointer
   color_buffer =
       (uint32_t *)malloc(sizeof(uint32_t) * window_width * window_height);
+  // Trying Arena instead of malloc
+  //  color_buffer =
+  //      (uint32_t *)ArenaAlloc(sizeof(uint32_t) * window_width *
+  //      window_height);
   if (!color_buffer) {
-    fprintf(stderr, "Error allocating color_buffer memory.\n");
+    fprintf(stderr, "Error allocating color_buffer memory in Arena.\n");
   }
 
   // Creating SDL texture for displaying colors in the color_buffer /
@@ -95,7 +133,7 @@ void setup(void) {
   // allocated memory.
 }
 void process_input(void) {
-  // FIXED
+  // FIXED by changing from switch case to if statements.
   SDL_Event event;
   SDL_PollEvent(&event);
 
@@ -152,6 +190,7 @@ void render(void) {
   render_color_buffer();
   clear_color_buffer(0xFF000000);
   draw_grid();
+  // draw_color();
   SDL_RenderPresent(renderer);
 }
 
@@ -159,6 +198,7 @@ void render(void) {
 // our own GC
 void destroy_window(void) {
   free(color_buffer);
+  // ArenaRelease(color_buffer);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
